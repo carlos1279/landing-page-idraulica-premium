@@ -10,6 +10,24 @@
   <title>IdraulicaPro – Idraulico Professionale a Milano | Design Premium</title>
   <meta name="description" content="Pronto intervento idraulico a Milano. Perdite, spurghi, caldaie, condizionamento. Preventivi gratuiti e trasparenti." />
 
+  <!-- ============================================================
+       SECURITY HEADERS
+       ============================================================ -->
+  <!-- Content Security Policy: Protegge da XSS e injection attacks -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+  
+  <!-- Protegge da Clickjacking -->
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+  
+  <!-- Referrer Policy: Controlla quali informazioni vengono inviate -->
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  
+  <!-- Permissions Policy: Limita accesso a browser features -->
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" />
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -1098,6 +1116,69 @@
         waterMaterial.uniforms.uResolution.value.set(w, h);
       });
     })();
+
+    // ============================================================
+    // SECURITY PROTECTIONS
+    // ============================================================
+    
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML;
+    }
+
+    const formInputs = document.querySelectorAll('.form-input');
+    formInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        this.value = sanitizeInput(this.value);
+      });
+      input.addEventListener('keypress', function(e) {
+        if (e.key === '<' || e.key === '>' || e.key === '{' || e.key === '}') {
+          e.preventDefault();
+        }
+      });
+    });
+
+    let lastSubmitTime = 0;
+    const SUBMIT_COOLDOWN = 3000;
+    const form = document.getElementById('contact-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const now = Date.now();
+        if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+          e.preventDefault();
+          console.warn('Form submission rate limited');
+          return false;
+        }
+        lastSubmitTime = now;
+      });
+    }
+
+    if (window.self !== window.top) {
+      window.top.location = window.self.location;
+    }
+
+    window.addEventListener('error', function(e) {
+      console.error('Error detected:', e.type);
+    });
+
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = args[0];
+      if (typeof url === 'string' && !url.startsWith('http://localhost') && !url.startsWith(window.location.origin)) {
+        if (!url.startsWith('https://')) {
+          console.warn('Insecure fetch blocked:', url);
+          return Promise.reject(new Error('Insecure request blocked'));
+        }
+      }
+      return originalFetch.apply(this, args);
+    };
+
+    window.eval = function() {
+      throw new Error('eval() is disabled for security reasons');
+    };
+
+    console.log('🔒 Security protections activated');
   </script>
 </body>
 </html>
