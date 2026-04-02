@@ -1,0 +1,14 @@
+<script>
+  // Legge l'indirizzo del sito
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Cerca la parola "nome" dopo il punto di domanda
+  const nomeCliente = urlParams.get('nome');
+
+  // Se trova il nome nel link, lo sostituisce nella pagina
+  if (nomeCliente) {
+    // Sostituisci 'nome-azienda' con l'ID reale del tuo titolo HTML
+    document.getElementById('nome-azienda').innerText = nomeCliente;
+    document.title = "Anteprima 3D per " + nomeCliente;
+  }
+</script>
